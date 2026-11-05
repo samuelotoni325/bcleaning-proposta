@@ -95,6 +95,41 @@
     io.observe(book);
   }
 
+  // Antes e depois: a cortina limpa passa sozinha quando a foto aparece; os botões alternam.
+  const ba = $('[data-ba-stage]');
+  if (ba) {
+    const btns = $$('.ba-toggle button');
+    const set = after => { ba.classList.toggle('is-after', after); btns.forEach(b => b.setAttribute('aria-pressed', String((b.dataset.ba === 'after') === after))); };
+    btns.forEach(b => b.addEventListener('click', () => { auto = false; set(b.dataset.ba === 'after'); }));
+    let auto = true;
+    if (!reduce) {
+      set(false);
+      const io2 = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { io2.disconnect(); setTimeout(() => { if (auto) set(true); }, 900); } }), { threshold: .55 });
+      io2.observe(ba);
+    }
+  }
+
+  // Diário de trabalhos: filtro por projeto e visualizador
+  const grid = $('[data-grid]');
+  if (grid) {
+    const tiles = $$('.wk', grid);
+    const tabs = $$('.work-tabs [data-job]');
+    tabs.forEach(t => t.addEventListener('click', () => {
+      tabs.forEach(x => x.setAttribute('aria-selected', String(x === t)));
+      tiles.forEach(w => { const show = t.dataset.job === 'all' || w.dataset.job === t.dataset.job; w.hidden = !show; w.classList.remove('pop'); if (show && !reduce) { void w.offsetWidth; w.classList.add('pop'); } });
+    }));
+    const lb = $('[data-lb]'), data = JSON.parse($('[data-lb-data]').textContent);
+    const lbImg = $('[data-lb-img]', lb), lbCap = $('[data-lb-cap]', lb);
+    let cur = 0;
+    const visible = () => tiles.filter(w => !w.hidden).map(w => +w.dataset.i);
+    const show = i => { cur = i; lbImg.src = data[i].s; lbImg.alt = data[i].a; lbCap.textContent = `${data[i].a} · ${data[i].c}`; };
+    tiles.forEach(w => w.addEventListener('click', () => { show(+w.dataset.i); if (lb.showModal) lb.showModal(); else lb.setAttribute('open', ''); }));
+    $$('[data-lb-step]', lb).forEach(b => b.addEventListener('click', () => { const v = visible(); const k = v.indexOf(cur); show(v[(k + +b.dataset.lbStep + v.length) % v.length]); }));
+    $('[data-lb-close]', lb).addEventListener('click', () => lb.close());
+    lb.addEventListener('click', e => { if (e.target === lb) lb.close(); });
+    lb.addEventListener('keydown', e => { if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') $(`[data-lb-step="${e.key === 'ArrowRight' ? 1 : -1}"]`, lb).click(); });
+  }
+
   if (reduce || !window.gsap) {
     $$('.lr [data-out]').forEach(el => { el.style.opacity = 0; });
     $$('.tsteps li').forEach(l => l.classList.add('on'));
@@ -158,6 +193,6 @@
     const tl = bedTl(tp, { scrollTrigger: { trigger: tp, start: 'top top', end: 'bottom bottom', scrub: .6 }, onUpdate: () => { const p = tl.progress(); steps.forEach((s, i) => s.classList.toggle('on', p >= [0.02, .3, .6, .92][i])); } });
   }
 
-  $$('.sec-head, .rh-chart, .tell-list li, .book-page, .bruna-in > *').forEach(el => gsap.from(el, { y: 34, opacity: 0, duration: .9, ease: 'power3.out', scrollTrigger: { trigger: el, start: 'top 88%', once: true } }));
+  $$('.sec-head, .rh-chart, .tell-list li, .book-page, .bruna-in > *, .svc-i, .rv, .how-list li, .towns li, .map, .faq-list details, .turn-photos span, .hw-photos span').forEach(el => gsap.from(el, { y: 34, opacity: 0, duration: .9, ease: 'power3.out', scrollTrigger: { trigger: el, start: 'top 88%', once: true } }));
   addEventListener('load', () => ScrollTrigger.refresh());
 })();
